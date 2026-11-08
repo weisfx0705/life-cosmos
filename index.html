@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Life Cosmos · 一個生命體的宇宙</title>
+<meta name="description" content="把多年的日記變成一座可以走進去的宇宙。陳嘉暐數位分身的公開版示範，以及讓你用自己的日記建造宇宙的工具；全部在瀏覽器裡執行。">
+<style>
+  :root{--bg:#04050b;--ink:#ece8f4;--dim:#9a96b0;--faint:#5d5a73;--line:rgba(200,190,255,.14);--gold:#ffd38a;
+        --serif:"Songti TC","Noto Serif TC","PMingLiU",serif;--sans:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg)}
+  body{font-family:var(--sans);color:var(--ink);line-height:1.75}
+  a{color:inherit}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  /* hero: the real universe, running */
+  .hero{position:relative;height:min(92vh,860px);min-height:560px;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none}
+  .hero .veil{position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,5,11,.96) 0%,rgba(4,5,11,.86) 34%,rgba(4,5,11,.35) 56%,rgba(4,5,11,0) 74%),linear-gradient(0deg,var(--bg) 0%,rgba(4,5,11,0) 18%)}
+  .hero .copy{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
+  .hero .k{font-size:12px;letter-spacing:.42em;color:var(--dim)}
+  .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(36px,6vw,64px);letter-spacing:.14em;line-height:1.35;margin:18px 0 18px}
+  .hero p{max-width:520px;color:#d6d2e8;font-size:16px}
+  .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;border:1px solid rgba(220,210,255,.35);text-decoration:none;font-size:15px;letter-spacing:.06em;transition:.2s}
+  .btn:hover{background:rgba(220,210,255,.1);border-color:rgba(220,210,255,.7);transform:translateY(-1px)}
+  .btn.primary{background:var(--gold);border-color:var(--gold);color:#1c1405;font-weight:500}
+  .btn.primary:hover{background:#ffe0a8}
+  .btn:active{transform:translateY(0) scale(.98)}
+  section{padding:84px 0;border-bottom:1px solid var(--line)}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.4vw,34px);letter-spacing:.1em;margin-bottom:12px}
+  .lead{color:var(--dim);max-width:640px;margin-bottom:36px}
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  @media (max-width:900px){.steps{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){.steps{grid-template-columns:1fr}}
+  .step{padding:22px;border:1px solid var(--line);border-radius:16px;background:rgba(12,13,26,.7)}
+  .step .n{font-size:12px;letter-spacing:.3em;color:var(--gold)}
+  .step h3{font-family:var(--serif);font-weight:400;font-size:20px;margin:8px 0 8px;letter-spacing:.06em}
+  .step p{font-size:14px;color:#cfcae2}
+  .views{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media (max-width:900px){.views{grid-template-columns:1fr}}
+  .view{padding:24px;border:1px solid var(--line);border-radius:16px}
+  .view h3{font-family:var(--serif);font-weight:400;font-size:21px;letter-spacing:.08em;margin-bottom:8px}
+  .view p{font-size:14px;color:#cfcae2}
+  .promise{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+  @media (max-width:800px){.promise{grid-template-columns:1fr}}
+  .promise ul{list-style:none}
+  .promise li{padding:12px 0;border-bottom:1px solid var(--line);font-size:15px;color:#d6d2e8}
+  .promise li b{color:var(--ink);font-weight:500}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px}
+  footer{padding:40px 0 64px;color:var(--faint);font-size:13px}
+</style>
+</head>
+<body>
+  <div class="hero">
+    <iframe src="demo/index.html?embed" title="示範宇宙" loading="eager" tabindex="-1"></iframe>
+    <div class="veil"></div>
+    <div class="copy"><div class="wrap">
+      <div class="k">LIFE COSMOS</div>
+      <h1>一個生命體的宇宙</h1>
+      <p>把多年的日記變成一座可以走進去的宇宙：每段記憶是一顆星，生命裡反覆出現的人、地方和主題成了恆星。這是陳嘉暐「數位分身」的公開版，你也可以用自己的日記，造一座自己的。</p>
+      <div class="cta">
+        <a class="btn primary" href="builder/index.html">用你的日記建造宇宙</a>
+        <a class="btn" href="demo/index.html">走進示範宇宙</a>
+      </div>
+    </div></div>
+  </div>
+
+  <section><div class="wrap">
+    <h2>從日記到宇宙，四個步驟</h2>
+    <p class="lead">全部在你的瀏覽器裡完成，不需要安裝、不需要帳號、不需要 AI 金鑰。Mac、Windows 都能用。</p>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><h3>放入日記</h3><p>拖進一個資料夾，或是 .md、.txt、.docx 檔；從 Google Drive 下載整個資料夾的 zip 也可以。</p></div>
+      <div class="step"><div class="n">02</div><h3>認出生命裡的人</h3><p>工具找出在多篇日記裡反覆出現的詞，你點一下告訴它誰是人、哪裡是地方。它們會成為宇宙的恆星。</p></div>
+      <div class="step"><div class="n">03</div><h3>補上 YAML</h3><p>每篇開頭需要標題、日期、分類、一句摘要與心情。缺的會用規則先補，你打開每篇全文對照確認，也能把補好的日記下載回去。</p></div>
+      <div class="step"><div class="n">04</div><h3>生成宇宙</h3><p>得到一個單一的 HTML 檔，雙擊就能打開。可以選公開版：隱藏全文，只留標題與摘要。</p></div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <h2>三種看自己的方式</h2>
+    <p class="lead">同一批記憶，換三個角度看。</p>
+    <div class="views">
+      <div class="view"><h3>時間銀河</h3><p>中心是你，越往外越接近現在；內側旋臂是生活與感情，外側旋臂是工作與創作。按下播放，宇宙從第一篇日記開始一顆一顆亮起來。</p></div>
+      <div class="view"><h3>主題星座</h3><p>把記憶依生命篇章分群，時間先放一邊。左側的軌道面板像錄音混音台，可以獨奏或靜音某一類記憶。</p></div>
+      <div class="view"><h3>恆星系</h3><p>最常出現的人、地方和主題成了恆星，每段記憶繞著最牽動它的那顆公轉；被兩顆恆星牽住的記憶，停在它們之間的引力橋上。</p></div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap promise">
+    <div><h2>日記不會離開你的電腦</h2><p class="lead">這個網站沒有伺服器，也不收集任何資料。它只是一份放在 GitHub Pages 上的靜態網頁，所有的讀取、整理和計算，都發生在你自己的瀏覽器裡。</p></div>
+    <ul>
+      <li><b>沒有上傳。</b>檔案只被你的瀏覽器讀取，關掉分頁就消失。</li>
+      <li><b>完整版只屬於你。</b>含全文的宇宙檔案只存在你下載的地方。</li>
+      <li><b>公開版不含全文。</b>想分享時勾選公開版，檔案裡就只有標題與摘要。</li>
+      <li><b>可以離線用。</b>下載整個專案，雙擊 <code>builder/index.html</code> 就能跑（讀 .docx 與 .zip 需要網路載入函式庫）。</li>
+    </ul>
+  </div></section>
+
+  <footer><div class="wrap">Life Cosmos · 由陳嘉暐的數位分身記憶庫延伸而來 · 原始流程使用 graphify 知識圖譜與 Claude 分析；這個公開工具改用不需要 AI 的關鍵字規則 · MIT License</div></footer>
+</body>
+</html>
