@@ -13,7 +13,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden}
-  canvas{position:fixed;inset:0;display:block;cursor:grab}
+  canvas{position:fixed;inset:0;display:block;cursor:grab;touch-action:pinch-zoom}
   canvas.dragging{cursor:grabbing}
   .ui{position:fixed;z-index:5}
   button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -109,6 +109,7 @@
 
   /* detail panel */
   #detail{--detail-pad:30px;top:0;right:0;bottom:0;width:min(380px,100vw);background:rgba(8,8,22,.86);border-left:1px solid var(--line);backdrop-filter:blur(16px);padding:0 var(--detail-pad) 30px;overflow:auto;transform:translateX(100%);transition:transform .45s cubic-bezier(.2,.8,.2,1);z-index:8}
+  #detail:not(.open){pointer-events:none}
   #detail.open{transform:none}
   #detail{transition:transform .45s cubic-bezier(.2,.8,.2,1),width .45s cubic-bezier(.2,.8,.2,1),padding .45s}
   #detail.reading{--detail-pad:clamp(20px,7vw,52px);width:min(720px,100vw);padding-bottom:64px}
@@ -484,20 +485,32 @@ function project(p){
 }
 
 /* ---------- interaction ---------- */
-let drag=null;
+let drag=null, touchTap=null;
 const VIEW_ZOOM={galaxy:.74, constellation:.5, gravity:.6};
 const VIEW_PITCH={galaxy:1.02, constellation:.35, gravity:.42};
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerdown',e=>{
+  if(drag || !e.isPrimary) return;
+  touchTap=null;
   const pan = e.shiftKey || e.button===2 || e.button===1;
-  drag={x:e.clientX,y:e.clientY,yaw:state.tYaw,pitch:state.tPitch,px:state.tPanX,py:state.tPanY,pan,moved:false};
-  cv.setPointerCapture(e.pointerId);cv.classList.add('dragging')});
+  const touch = e.pointerType==='touch';
+  drag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:state.tYaw,pitch:state.tPitch,
+    px:state.tPanX,py:state.tPanY,pan,moved:false,slop:touch?8:3};
+  if(touch) updateHover(null);
+  cv.setPointerCapture(e.pointerId);
+  cv.classList.add('dragging');
+});
 cv.addEventListener('pointermove',e=>{
-  if(drag){const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>3) drag.moved=true;
+  if(drag){
+    if(drag.id!==e.pointerId) return;
+    const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+    if(!drag.moved && Math.hypot(dx,dy)<=drag.slop) return;
+    drag.moved=true;
     if(drag.pan){ state.tPanX=drag.px+dx; state.tPanY=drag.py+dy; }
     else { state.tYaw=drag.yaw+dx*.005; state.tPitch=Math.max(0,Math.min(1.45,drag.pitch-dy*.004)); }
-    state.autoRotate=false;}
-  pick(e.clientX,e.clientY);
+    state.autoRotate=false;
+  }
+  if(e.pointerType!=='touch') updateHover(starAt(e.clientX,e.clientY),e.clientX,e.clientY);
 });
 function zoomAt(mx,my,newZ){
   newZ=Math.max(.4,Math.min(8,newZ)); const k=newZ/state.tZoom;
@@ -506,13 +519,41 @@ function zoomAt(mx,my,newZ){
 }
 function resetCamera(){ state.tPanX=0; state.tPanY=0; state.tZoom=VIEW_ZOOM[state.view]; }
 cv.addEventListener('dblclick',e=>{
-  if(state.hover && state.hover.sx!==undefined){ // fly to the star / gravity source
-    const n=state.hover, newZ=Math.max(state.tZoom*1.8, 3.2), k=newZ/state.zoom;
+  const n=starAt(e.clientX,e.clientY);
+  if(n){ // fly to the star / gravity source
+    const newZ=Math.max(state.tZoom*1.8, 3.2), k=newZ/state.zoom;
     state.tPanX = -(n.sx-W/2-state.panX)*k; state.tPanY = -(n.sy-H/2-state.panY)*k; state.tZoom=Math.min(8,newZ);
     state.autoRotate=false;
   } else { resetCamera(); state.autoRotate=true; }
 });
-cv.addEventListener('pointerup',e=>{cv.classList.remove('dragging'); if(drag&&!drag.moved){ if(state.hover) select(state.hover); else closeDetail(); } drag=null});
+function finishDrag(e){
+  if(drag?.id!==e.pointerId) return null;
+  const gesture=drag;
+  drag=null;
+  cv.classList.remove('dragging');
+  return gesture;
+}
+cv.addEventListener('pointerup',e=>{
+  const gesture=finishDrag(e);
+  if(!gesture || gesture.moved || Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)>gesture.slop) return;
+  if(e.pointerType==='touch'){
+    // Let the browser finish the tap before opening a panel under the finger.
+    touchTap={x:e.clientX,y:e.clientY};
+  } else selectAt(e.clientX,e.clientY);
+});
+cv.addEventListener('click',()=>{
+  if(!touchTap) return;
+  const {x,y}=touchTap;
+  touchTap=null;
+  selectAt(x,y);
+});
+function selectAt(x,y){
+  const star=starAt(x,y);
+  if(star) select(star);
+  else closeDetail();
+}
+cv.addEventListener('pointercancel',finishDrag);
+cv.addEventListener('lostpointercapture',finishDrag);
 cv.addEventListener('wheel',e=>{e.preventDefault(); state.autoRotate=false; zoomAt(e.clientX,e.clientY,state.tZoom*Math.exp(-e.deltaY*(e.ctrlKey?.01:.0015)))},{passive:false});
 window.addEventListener('keydown',e=>{
   const reading=$('#detail').classList.contains('reading') && state.sel && state.sel.t!==undefined;
@@ -526,10 +567,13 @@ window.addEventListener('keydown',e=>{
 });
 
 const tip=$('#tip');
-function pick(mx,my){
+function starAt(mx,my){
   let best=null, bd=14*14;
   for(const d of docs){ if(!d.on||d.vis<.4) continue; const dx=d.sx-mx, dy=d.sy-my, dd=dx*dx+dy*dy; if(dd<bd){bd=dd;best=d} }
   for(const e of ents){ if(!e.on) continue; const dx=e.sx-mx, dy=e.sy-my, dd=dx*dx+dy*dy; if(dd<bd){bd=dd;best=e} }
+  return best;
+}
+function updateHover(best,mx,my){
   if(best && best!==state.hover){ SND.hover(best,mx); if(best.t!==undefined) mix.peak[best.c]=Math.max(mix.peak[best.c]||0,.55); }
   state.hover=best;
   if(best){
