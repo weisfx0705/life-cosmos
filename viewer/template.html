@@ -108,10 +108,14 @@
   #tip .m{color:var(--dim);font-size:11px}
 
   /* detail panel */
-  #detail{top:0;right:0;bottom:0;width:min(380px,100vw);background:rgba(8,8,22,.86);border-left:1px solid var(--line);backdrop-filter:blur(16px);padding:34px 30px 30px;overflow:auto;transform:translateX(100%);transition:transform .45s cubic-bezier(.2,.8,.2,1);z-index:8}
+  #detail{--detail-pad:30px;top:0;right:0;bottom:0;width:min(380px,100vw);background:rgba(8,8,22,.86);border-left:1px solid var(--line);backdrop-filter:blur(16px);padding:0 var(--detail-pad) 30px;overflow:auto;transform:translateX(100%);transition:transform .45s cubic-bezier(.2,.8,.2,1);z-index:8}
   #detail.open{transform:none}
   #detail{transition:transform .45s cubic-bezier(.2,.8,.2,1),width .45s cubic-bezier(.2,.8,.2,1),padding .45s}
-  #detail.reading{width:min(720px,100vw);padding:34px 52px 64px}
+  #detail.reading{--detail-pad:clamp(20px,7vw,52px);width:min(720px,100vw);padding-bottom:64px}
+  #detail.restoring-list{transition-property:transform}
+  #detail .detail-toolbar{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;margin-inline:calc(-1 * var(--detail-pad));padding-inline:var(--detail-pad) 8px;background:#0b0b1a}
+  #detail .list-back{min-height:44px;color:#cfcae2;font-size:13px;letter-spacing:.08em}
+  #detail .list-back:hover{color:#fff}
   #detail .readbtn{margin-top:20px;display:inline-flex;gap:10px;align-items:center;padding:9px 18px;border:1px solid rgba(220,210,255,.3);border-radius:999px;font-size:13px;letter-spacing:.14em;color:var(--ink);transition:.25s}
   #detail .readbtn:hover{background:rgba(220,210,255,.1);border-color:rgba(220,210,255,.6)}
   #detail .readbtn small{color:var(--faint);letter-spacing:.06em;font-size:11px}
@@ -142,7 +146,7 @@
   #sound.off .wave{display:none}
   #sound:not(.off) .x{display:none}
   #prologue .note{margin-top:20px;font-size:11px;color:var(--faint);letter-spacing:.2em}
-  #detail .close{position:absolute;top:16px;right:18px;color:var(--dim);font-size:20px;line-height:1}
+  #detail .close{margin-left:auto;width:44px;height:44px;color:var(--dim);font-size:20px;line-height:1}
   #detail .kicker{font-size:11px;letter-spacing:.24em;color:var(--dim);display:flex;align-items:center;gap:8px}
   #detail .kicker i{width:8px;height:8px;border-radius:50%;display:inline-block}
   #detail h2{font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.5;margin:12px 0 10px}
@@ -206,7 +210,13 @@
   <button id="fs" aria-label="全螢幕" title="全螢幕（F）"><svg viewBox="0 0 16 16"><path class="enter" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><path class="exit" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
 </div>
 <div id="tip" class="ui"></div>
-<aside id="detail" class="ui"><button class="close" aria-label="關閉">×</button><div id="dbody"></div></aside>
+<aside id="detail" class="ui">
+  <div class="detail-toolbar">
+    <button type="button" id="detailListBack" class="list-back" hidden>‹ 返回列表</button>
+    <button type="button" class="close" aria-label="關閉">×</button>
+  </div>
+  <div id="dbody"></div>
+</aside>
 
 <div id="prologue">
   <div class="box">
@@ -457,7 +467,7 @@ ents.filter(e=>e.type==='theme').forEach((e,i)=>e.rank=i);
 /* ---------- state ---------- */
 const state = {
   view:'galaxy', yaw:-0.6, pitch:1.02, zoom:.74, tYaw:-0.6, tPitch:1.02, tZoom:.74, panX:0, panY:0, tPanX:0, tPanY:0,
-  year:Y1, playing:false, hover:null, sel:null, focusEnt:null,
+  year:Y1, playing:false, hover:null, sel:null, focusEnt:null, listOrigin:null,
   autoRotate:true, t:0
 };
 const viewKey = {galaxy:'g', constellation:'cn', gravity:'fp'};
@@ -507,7 +517,13 @@ cv.addEventListener('wheel',e=>{e.preventDefault(); state.autoRotate=false; zoom
 window.addEventListener('keydown',e=>{
   const reading=$('#detail').classList.contains('reading') && state.sel && state.sel.t!==undefined;
   if(reading && (e.key==='ArrowLeft'||e.key==='ArrowRight')){ const n=docs[state.sel.idx+(e.key==='ArrowLeft'?-1:1)]; if(n){e.preventDefault(); openReader(n);} return; }
-  if(e.key==='Escape'){ if(reading){ select(state.sel); return; } closeDetail();setFocus(null)} if(e.key===' '&&e.target===document.body){e.preventDefault();togglePlay()}});
+  if(e.key==='Escape'){
+    if(state.listOrigin){ returnToList(); return; }
+    if(reading){ select(state.sel); return; }
+    closeDetail();setFocus(null);
+  }
+  if(e.key===' '&&e.target===document.body){e.preventDefault();togglePlay()}
+});
 
 const tip=$('#tip');
 function pick(mx,my){
@@ -528,7 +544,9 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const typeLabel=t=>({person:'人物',place:'地方',org:'組織',work:'作品／工具',theme:'生命主題',concept:'概念'}[t]||t);
 
 /* ---------- detail ---------- */
-function select(n){
+function select(n, {keepList=false} = {}){
+  if(!keepList) state.listOrigin=null;
+  $('#detailListBack').hidden=!state.listOrigin;
   state.sel=n;
   if(n.t!==undefined){ // doc
     const linked = (n.ents||[]).map(i=>ents[i]);
@@ -557,6 +575,7 @@ function select(n){
   }
   $('#detail').classList.remove('reading');
   $('#detail').classList.add('open'); cap.classList.remove('show');
+  $('#detail').scrollTop=0;
   if(n.t!==undefined) SND.select(n); else SND.thread(n.docs.map(i=>docs[i]).filter(d=>d.on).sort((a,b)=>a.y-b.y));
 }
 
@@ -586,6 +605,7 @@ function md(src){
   flushP(); flushL(); return out;
 }
 function openReader(d){
+  if(!d.b){ select(d, {keepList:true}); return; }
   state.sel=d;
   if(state.year<d.y) setYear(Y1);
   const ech = echoes.filter(e=>e[0]===d.idx||e[1]===d.idx).map(e=>docs[e[0]===d.idx?e[1]:e[0]]).sort((a,b)=>a.y-b.y);
@@ -607,15 +627,41 @@ function openReader(d){
   cap.classList.remove('show');
   SND.page();
 }
-function closeDetail(){ $('#detail').classList.remove('open','reading'); state.sel=null; }
+function returnToList(){
+  const origin=state.listOrigin;
+  if(!origin) return;
+  const detail=$('#detail');
+  // Restore at the list's final width so its scroll position can be set immediately.
+  detail.classList.add('restoring-list');
+  select(origin.entity);
+  detail.scrollTop=origin.scrollTop;
+  detail.querySelector(`button[data-d="${origin.docIndex}"]`)?.focus({preventScroll:true});
+  detail.classList.remove('restoring-list');
+}
+function closeDetail(){
+  $('#detail').classList.remove('open','reading');
+  $('#detailListBack').hidden=true;
+  state.sel=null;
+  state.listOrigin=null;
+}
+$('#detailListBack').onclick=returnToList;
 $('#detail .close').onclick=()=>{closeDetail();setFocus(null)};
 $('#dbody').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   if(b.dataset.read){ openReader(docs[+b.dataset.read]); return; }
   if(b.dataset.readnav){ openReader(docs[+b.dataset.readnav]); return; }
-  if(b.dataset.back){ select(docs[+b.dataset.back]); return; }
-  if(b.dataset.d){ const d=docs[+b.dataset.d]; if(state.year<d.y) setYear(Y1);
-    if($('#detail').classList.contains('reading')) openReader(d); else select(d); }
+  if(b.dataset.back){ select(docs[+b.dataset.back], {keepList:true}); return; }
+  if(b.dataset.d){
+    const d=docs[+b.dataset.d];
+    const fromList=state.sel?.docs;
+    if(fromList){
+      state.listOrigin={entity:state.sel, scrollTop:$('#detail').scrollTop, docIndex:d.idx};
+    }
+    if(state.year<d.y) setYear(Y1);
+    if($('#detail').classList.contains('reading')) openReader(d);
+    else select(d, {keepList:true});
+    if(fromList) $('#detailListBack').focus({preventScroll:true});
+  }
   if(b.dataset.e){ select(ents[+b.dataset.e]); }
 });
 
