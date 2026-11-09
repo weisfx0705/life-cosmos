@@ -22,10 +22,10 @@
   #title{top:22px;left:28px;pointer-events:none}
   #title h1{font-family:var(--serif);font-weight:400;font-size:22px;letter-spacing:.18em}
   #title p{color:var(--dim);font-size:12px;letter-spacing:.12em;margin-top:6px}
-  #home{top:20px;right:28px;z-index:25;display:inline-flex;align-items:center;min-height:30px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--glass);backdrop-filter:blur(10px);color:var(--dim);font-size:11px;letter-spacing:.1em;text-decoration:none;transition:color .2s,border-color .2s,transform .2s}
+  #home{top:84px;left:414px;z-index:25;display:inline-flex;align-items:center;min-height:34px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;background:var(--glass);backdrop-filter:blur(10px);color:var(--dim);font-size:11px;letter-spacing:.1em;text-decoration:none;transition:color .2s,border-color .2s,transform .2s}
   #home:hover{color:var(--ink);border-color:rgba(220,210,255,.45);transform:translateY(-1px)}
   #home:active{transform:translateY(0) scale(.97)}
-  #stats{top:56px;right:28px;text-align:right;color:var(--dim);font-size:12px;letter-spacing:.08em;line-height:1.9}
+  #stats{top:24px;right:28px;text-align:right;color:var(--dim);font-size:12px;letter-spacing:.08em;line-height:1.9}
   #stats b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
 
   /* view switch */
@@ -70,7 +70,7 @@
   body.fs #fs .enter, body:not(.fs) #fs .exit{display:none}
 
   /* gravity list */
-  #gwrap{right:28px;top:148px;width:230px;display:flex;flex-direction:column;align-items:flex-end}
+  #gwrap{right:28px;top:116px;width:230px;display:flex;flex-direction:column;align-items:flex-end}
   #gtoggle{display:inline-flex;gap:8px;align-items:center;padding:6px 13px;border:1px solid var(--line);border-radius:999px;background:var(--glass);font-size:12px;color:var(--dim);letter-spacing:.12em;backdrop-filter:blur(10px);transition:.25s;max-width:230px}
   #gtoggle:hover{color:var(--ink);border-color:rgba(220,210,255,.4)}
   #gtoggle em{font-style:normal;color:#ffe2b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -183,7 +183,7 @@
   #hint{left:50%;transform:translateX(-50%);bottom:82px;font-size:11px;color:var(--faint);letter-spacing:.14em;pointer-events:none;transition:opacity 1s}
   body.embed .ui, body.embed #prologue{display:none!important}
   body.embed canvas{cursor:default}
-  @media (max-width:820px){#gwrap,#mixer,#viewdesc{display:none}#stats{display:none}#title{top:18px;left:16px;max-width:220px}#title h1{font-size:19px}#home{top:17px;right:16px}}
+  @media (max-width:820px){#gwrap,#mixer,#viewdesc{display:none}#stats{display:none}#title{top:18px;left:16px;max-width:220px}#title h1{font-size:19px}#home{top:17px;right:16px;left:auto;min-height:30px;padding:5px 11px}}
 </style>
 </head>
 <body>
