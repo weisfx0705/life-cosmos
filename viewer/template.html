@@ -535,25 +535,33 @@ function finishDrag(e){
 }
 cv.addEventListener('pointerup',e=>{
   const gesture=finishDrag(e);
-  if(!gesture || gesture.moved || Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)>gesture.slop) return;
+  if(!gesture || e.button!==0 || gesture.moved || Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)>gesture.slop) return;
   if(e.pointerType==='touch'){
     // Let the browser finish the tap before opening a panel under the finger.
-    touchTap={x:e.clientX,y:e.clientY};
+    touchTap={id:e.pointerId,x:e.clientX,y:e.clientY,at:e.timeStamp};
   } else selectAt(e.clientX,e.clientY);
 });
-cv.addEventListener('click',()=>{
-  if(!touchTap) return;
-  const {x,y}=touchTap;
+cv.addEventListener('click',e=>{
+  const tap=touchTap;
+  if(!tap) return;
+  if(e.timeStamp-tap.at>700){ touchTap=null; return; }
+  // Some browsers deliver the touch click as a MouseEvent without a pointer ID.
+  if(typeof e.pointerId==='number' && (e.pointerId!==tap.id || e.pointerType!=='touch')) return;
+  if(Math.hypot(e.clientX-tap.x,e.clientY-tap.y)>2) return;
   touchTap=null;
-  selectAt(x,y);
+  selectAt(tap.x,tap.y);
 });
 function selectAt(x,y){
   const star=starAt(x,y);
   if(star) select(star);
   else closeDetail();
 }
-cv.addEventListener('pointercancel',finishDrag);
+cv.addEventListener('pointercancel',e=>{
+  finishDrag(e);
+  if(touchTap?.id===e.pointerId) touchTap=null;
+});
 cv.addEventListener('lostpointercapture',finishDrag);
+cv.addEventListener('pointerleave',e=>{ if(e.pointerType!=='touch') updateHover(null); });
 cv.addEventListener('wheel',e=>{e.preventDefault(); state.autoRotate=false; zoomAt(e.clientX,e.clientY,state.tZoom*Math.exp(-e.deltaY*(e.ctrlKey?.01:.0015)))},{passive:false});
 window.addEventListener('keydown',e=>{
   const reading=$('#detail').classList.contains('reading') && state.sel && state.sel.t!==undefined;
@@ -570,7 +578,7 @@ const tip=$('#tip');
 function starAt(mx,my){
   let best=null, bd=14*14;
   for(const d of docs){ if(!d.on||d.vis<.4) continue; const dx=d.sx-mx, dy=d.sy-my, dd=dx*dx+dy*dy; if(dd<bd){bd=dd;best=d} }
-  for(const e of ents){ if(!e.on) continue; const dx=e.sx-mx, dy=e.sy-my, dd=dx*dx+dy*dy; if(dd<bd){bd=dd;best=e} }
+  for(const e of ents){ if(!e.visible) continue; const dx=e.sx-mx, dy=e.sy-my, dd=dx*dx+dy*dy; if(dd<bd){bd=dd;best=e} }
   return best;
 }
 function updateHover(best,mx,my){
@@ -765,7 +773,7 @@ function setFocus(e){
     if(state.focusEnt===en){setFocus(null);closeDetail();} else select(en)});
 
   const people=ents.filter(e=>e.type==='person').length, places=ents.filter(e=>e.type==='place').length, themes=ents.filter(e=>e.type==='theme').length;
-  $('#stats').innerHTML = `<b>${docs.length}</b> 段記憶 · <b>${Math.round(Y1-Y0)}</b> 年<br><b>${people}</b> 個人 · <b>${places}</b> 個地方 · <b>${themes}</b> 個主題<br><b>${echoes.length}</b> 道跨時間的回聲`;
+  $('#stats').innerHTML = `<b>${docs.length}</b> 段記憶 · <b>${META.durationYears ?? Math.round(Y1-Y0)}</b> 年<br><b>${people}</b> 個人 · <b>${places}</b> 個地方 · <b>${themes}</b> 個主題<br><b>${echoes.length}</b> 道跨時間的回聲`;
 
   $('#viewdesc').textContent=VIEW_DESC.galaxy; placeMixer();
   $('#prologueText').innerHTML = DATA.prologue.map(esc).join('<br>');
@@ -1057,13 +1065,17 @@ function frame(now){
   const thr = Math.max(2, (state.view==='gravity'?7:11)/state.zoom);   // zoom in → more gravity sources appear
   for(let ei=0;ei<ents.length;ei++){
     const e=ents[ei];
-    if(!e.on && !relSet.has(ei)) continue;
     const isF = focus===e || state.hover===e;
     const rel = relSet.has(ei);
+    const gravity = state.view==='gravity';
+    const sun = gravity && e.isSun;
+    e.visible = (e.on || rel) && (sun || ((!gravity || isF || rel) &&
+      (e.type==='theme' || isF || rel || e.alive>=thr)));
+    if(!e.visible) continue;
     const dim = focus && !isF ? .25 : 1;
     const r = (1.5+Math.sqrt(e.alive)*.9)*e.ss/zs;
     const lp = 3000 + e.alive*12 + (isF?7000:0) + (rel?5500:0);
-    if(state.view==='gravity' && e.isSun){
+    if(sun){
       const col=SUN_COLOR[e.type], R0=(10+Math.sqrt(e.alive)*3.4)*e.ss/zs*(.94+.06*Math.sin(state.t*1.2+e.sunIdx));
       ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=(isF?1:.85)*dim;
       ctx.drawImage(sprite(col,128), e.sx-R0*3, e.sy-R0*3, R0*6, R0*6);
@@ -1073,12 +1085,11 @@ function frame(now){
       addLabel(`${typeLabel(e.type)} · ${e.alive} 段記憶`, e.sx, e.sy+R0*1.3+31, 9390+e.alive, {size:10, color:`rgba(200,195,225,${.6*dim})`, align:'center'});
       continue;
     }
-    if(state.view==='gravity' && !isF && !rel) continue;   // in the stellar view only suns stay lit; others appear on demand
     if(e.type==='theme'){
       ctx.globalAlpha=(isF||rel?1:.6)*dim; ctx.strokeStyle= isF||rel?'#ffe2b0':'rgba(255,226,176,.5)'; ctx.lineWidth=isF?1.4:.8;
       ctx.beginPath(); ctx.arc(e.sx,e.sy,r+2,0,7); ctx.stroke();
       addLabel(e.l, e.sx+r+6, e.sy+4, lp+300, {size:isF?13:11.5, color: isF||rel?'#ffe2b0':`rgba(255,226,176,${.7*dim})`});
-    } else if(isF || rel || e.alive>=thr){
+    } else {
       ctx.globalAlpha=.85*dim;
       ctx.fillStyle = e.type==='person'?'#9fd8ff': e.type==='place'?'#b6f0c8':'#d9c6ff';
       ctx.beginPath(); if(e.type==='place'){ctx.moveTo(e.sx,e.sy-r);ctx.lineTo(e.sx+r,e.sy);ctx.lineTo(e.sx,e.sy+r);ctx.lineTo(e.sx-r,e.sy);} else ctx.arc(e.sx,e.sy,r*.7+1,0,7); ctx.fill();
