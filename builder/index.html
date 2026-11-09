@@ -35,6 +35,9 @@
   .drop .big{font-family:var(--serif);font-size:18px;letter-spacing:.06em}
   .drop .small{font-size:13px;color:var(--dim);margin-top:4px}
   .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center}
+  .yaml-summary{justify-content:space-between;align-items:flex-start}
+  .yaml-summary .status{flex:1;min-width:min(100%,520px)}
+  .yaml-summary .btn{white-space:nowrap}
   .btn{padding:9px 18px;border-radius:999px;border:1px solid rgba(220,210,255,.3);background:transparent;font-size:14px;letter-spacing:.06em;transition:.2s}
   .btn:hover{background:rgba(220,210,255,.08);border-color:rgba(220,210,255,.6)}
   .btn.primary{background:var(--gold);border-color:var(--gold);color:#1c1405;font-weight:500}
@@ -159,7 +162,7 @@
   <section class="step off" id="s2">
     <h2><span class="n">STEP 3</span>整理每篇開頭的 YAML</h2>
     <p class="lead">每篇日記開頭都需要標題、日期、分類、一句摘要和心情。原本就有的會保留；缺的我用規則先補上（金色標籤），你可以直接在表格裡改。改好之後可以把補完 YAML 的日記打包下載，放回你的資料夾。</p>
-    <div class="status" id="yamlStatus"></div>
+    <div class="row yaml-summary"><div class="status" id="yamlStatus"></div><button class="btn" id="confirmAll" type="button">全部確認</button></div>
     <div class="table"><table><thead><tr><th style="width:96px"></th><th style="width:120px">日期</th><th>標題</th><th style="width:110px">分類</th><th style="width:76px">心情</th><th>一句摘要</th><th style="width:150px">檔案</th></tr></thead><tbody id="rows"></tbody></table></div>
     <div class="row"><button class="btn" id="dlYaml">下載補好 YAML 的日記（zip）</button><span class="status" id="saveState"></span></div>
     <p class="status" style="margin-top:10px">這個頁面不會替你存檔：所有修改只在這個分頁裡，<b>下載的 zip 才是存檔</b>。zip 裡附有 <code>cosmos-settings.json</code>，記下你在第 2、4 步的選擇；下次把整個 zip 拖回來（換一台電腦也可以），一切會接著上次的進度。原本的日記檔不會被改動，要用下載的版本取代它們。</p>
@@ -203,6 +206,6 @@
 <script src="viewer-template.js?v=20261109c"></script>
 <script src="samples.js?v=20261108b"></script>
 <script src="pipeline.js?v=20261108b"></script>
-<script src="app.js?v=20261108b"></script>
+<script src="app.js?v=20261109a"></script>
 </body>
 </html>

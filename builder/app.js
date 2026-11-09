@@ -112,6 +112,13 @@
         <td><input data-k="summary" value="${esc(d.fm.summary)}">${tag(d, "summary")}</td>
         <td class="file">${esc(d.path)}</td>
       </tr>`).join("");
+    refreshConfirmAll();
+  }
+  function refreshConfirmAll() {
+    const left = state.docs.filter(pending).length, button = $("#confirmAll");
+    button.disabled = !left;
+    button.textContent = left ? "全部確認" : "✓ 全部已確認";
+    button.title = left ? `一次確認剩下的 ${left} 篇 YAML` : "每篇 YAML 都已確認";
   }
   function statusCell(d) { const n = pending(d); return `<span class="st ${n ? "todo" : "ok"}" data-st="${d.i}">${n ? "待確認 " + n : "✓ 已確認"}</span>`; }
   function refreshRow(d) {
@@ -123,7 +130,22 @@
     tr.querySelector(".st").outerHTML = statusCell(d);
     const done = state.docs.filter(x => !pending(x)).length;
     $("#yamlStatus").innerHTML = $("#yamlStatus").innerHTML.replace(/已確認 <b>\d+<\/b>/, `已確認 <b>${done}</b>`);
+    refreshConfirmAll();
   }
+  $("#confirmAll").addEventListener("click", () => {
+    const waiting = state.docs.filter(pending);
+    if (!waiting.length) return;
+    for (const d of waiting) FIELDS.forEach(k => { d.auto[k] = "yaml"; });
+    for (const d of waiting) {
+      const tr = document.querySelector(`#rows tr[data-i="${d.i}"]`);
+      if (!tr) continue;
+      tr.querySelectorAll(".tag.auto").forEach(tag => tag.remove());
+      tr.querySelector(".st").outerHTML = statusCell(d);
+    }
+    $("#yamlStatus").innerHTML = $("#yamlStatus").innerHTML.replace(/已確認 <b>\d+<\/b>/, `已確認 <b>${state.docs.length}</b>`);
+    refreshConfirmAll();
+    setDirty(true);
+  });
   $("#rows").addEventListener("click", e => { const b = e.target.closest("[data-open]"); if (b) openReader(+b.dataset.open); });
   $("#rows").addEventListener("change", e => {
     const el = e.target.closest("[data-k]"), tr = e.target.closest("tr"); if (!el || !tr) return;
