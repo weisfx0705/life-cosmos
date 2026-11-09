@@ -236,7 +236,8 @@
     const catKeys = new Set(cats.map(c => c.key));
     const rows = docs.map(d => {
       const [Y, M, D] = d.fm.date.split("-").map(Number);
-      const y = Y + (M - 1) / 12 + (D - 1) / 365;
+      const yearStart = Date.UTC(Y, 0, 1), nextYear = Date.UTC(Y + 1, 0, 1), day = Date.UTC(Y, M - 1, D);
+      const y = Y + (day - yearStart) / (nextYear - yearStart);
       return { d, y, date: d.fm.date };
     }).sort((a, b) => a.y - b.y);
 
@@ -302,8 +303,10 @@
       const cnt = new Map(); m.forEach(r => r.ents.forEach(e => cnt.set(e, (cnt.get(e) || 0) + 1)));
       const top = [...cnt].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([e]) => ents[e].l);
       return { y, label: `${y}`, short: `${y}`, text: `這一年留下 ${m.length} 段記憶${top.length ? "，最常出現：" + top.join("、") : ""}。` };
-    }).filter((e, i, arr) => arr.length <= 14 || i % Math.ceil(arr.length / 14) === 0);
+    });
     const y0 = Math.floor(rows[0].y), y1 = Math.floor(rows[rows.length - 1].y);
+    const lastY = rows[rows.length - 1].y;
+    const timelineEnd = Math.min(lastY + .08, y1 + .9999);
     const who = author ? author + "的" : "";
     const usedCats = cats.filter(c => viewerDocs.some(d => d.c === c.key));
     const inner = usedCats.filter(c => !c.arm).map(c => c.label), outer = usedCats.filter(c => c.arm).map(c => c.label);
@@ -311,7 +314,7 @@
     return {
       categories: Object.fromEntries(cats.map(c => [c.key, { label: c.label, color: c.color }])),
       docs: viewerDocs, ents, echoes, comms: keptComms,
-      span: [y0, Math.round((rows[rows.length - 1].y + .08) * 1000) / 1000],
+      span: [y0, Math.floor(timelineEnd * 1000) / 1000],
       prologue: [`這座宇宙由 ${rows.length} 段記憶組成，從 ${y0} 年到 ${y1} 年。`, "中心是你自己，越往外越接近現在；",
                  `內側旋臂是${inner.join("、") || "生活"}，外側旋臂是${outer.join("、") || "作品與工作"}。`,
                  secret ? "這是公開版：每段記憶的全文都留在作者的電腦裡。" : "這個檔案含有全文，只屬於你。"],
